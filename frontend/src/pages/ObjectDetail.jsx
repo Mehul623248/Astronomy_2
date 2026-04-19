@@ -1,0 +1,49 @@
+import { useParams, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+
+export default function ObjectDetail() {
+  const { id } = useParams(); // Grabs 'M31' from the URL /object/M31
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    fetch(`/api/object/${id}`)
+      .then(res => res.json())
+      .then(json => setData(json));
+  }, [id]);
+
+  if (!data) return <div className="p-20 text-center">Loading {id}...</div>;
+
+  return (
+    <div className="p-8 max-w-4xl mx-auto">
+    <Link to="/messier" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+      ← Back to Catalog
+    </Link>
+    
+    <div className="mt-8 bg-slate-900 rounded-3xl p-10 border border-white/10 shadow-2xl">
+      {/* Display Common Name + Identifier */}
+      <h1 className="text-6xl font-black text-white">{data.common_name}</h1>
+      <h2 className="text-2xl font-mono text-cyan-500 mt-2">{data.name}</h2>
+      
+      {/* Alias Badges */}
+      <div className="flex flex-wrap gap-2 mt-6">
+        {data.aliases.map((alias, i) => (
+          <span key={i} className="text-[10px] uppercase tracking-widest bg-white/5 border border-white/10 px-2 py-1 rounded text-slate-400">
+            {alias}
+          </span>
+        ))}
+      </div>
+        
+        <div className="grid grid-cols-2 gap-8 mt-12">
+          <div className="bg-white/5 p-6 rounded-2xl">
+            <span className="block text-slate-500 uppercase text-xs font-bold">Apparent Magnitude</span>
+            <span className="text-3xl text-amber-400 font-mono">{data.mag}</span>
+          </div>
+          <div className="bg-white/5 p-6 rounded-2xl">
+            <span className="block text-slate-500 uppercase text-xs font-bold">Coordinates</span>
+            <span className="text-sm font-mono text-cyan-200">{data.ra} / {data.dec}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
