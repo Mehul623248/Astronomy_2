@@ -136,6 +136,53 @@ def get_object(name):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+
+from astroquery.mast import Observations
+from astroquery.skyview import SkyView
+import requests
+
+@app.route('/api/image/<path:name>')
+def get_astronomy_image(name):
+    # 1. Standardize the name (M31 -> M 31)
+    search_name = name
+    if name.upper().startswith('M') and name[1:].isdigit():
+        search_name = f"M {name[1:]}"
+
+    # Default fallback
+    result = {
+        "url": "https://via.placeholder.com/800x600/0f172a/06b6d4?text=No+Archive+Image+Found",
+        "source": "None"
+    }
+
+    try:
+        # --- Try MAST First ---
+        obs = Observations.query_object(search_name, radius=".02 deg")
+        interesting = obs[(obs['obs_collection'] == 'HST') | (obs['obs_collection'] == 'JWST')]
+        
+        if len(interesting) > 0:
+            products = Observations.get_product_list(interesting[0])
+            previews = products[products['productType'] == 'INFO']
+            if len(previews) > 0:
+                result["url"] = previews[0]['data_url']
+                result["source"] = "MAST (Hubble/JWST)"
+                return jsonify(result)
+
+        # --- Try SkyView Second ---
+        # We use a try/except specifically for SkyView because it is slow
+        try:
+            img_urls = SkyView.get_image_list(position=search_name, survey=['DSS2 Red'])
+            if img_urls and len(img_urls) > 0:
+                result["url"] = img_urls[0]
+                result["source"] = "NASA SkyView (DSS2)"
+                return jsonify(result)
+        except Exception as sky_e:
+            print(f"SkyView timed out or failed: {sky_e}")
+
+    except Exception as e:
+        print(f"General Image Error: {e}")
+
+    # --- Final Fallback if everything fails ---
+    return jsonify(result)
 if __name__ == '__main__':
     # Local development settings
     app.run(host='127.0.0.1', port=5000, debug=True)

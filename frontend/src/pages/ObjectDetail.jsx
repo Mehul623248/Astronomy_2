@@ -5,7 +5,8 @@ export default function ObjectDetail() {
   const { id } = useParams(); // Grabs 'M31' from the URL /object/M31
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageInfo, setImageInfo] = useState({ url: "", source: "" });
   useEffect(() => {
     setData(null);
     setError(null);
@@ -20,13 +21,35 @@ export default function ObjectDetail() {
       })
       .then((json) => setData(json))
       .catch((err) => setError(err.message));
-  }, [id]);
+  
+ 
+ fetch(`/api/image/${id}`)
+    .then((res) => {
+      if (!res.ok) {
+        // If server returns 500 or 404, stop here
+        throw new Error(`Server responded with ${res.status}`);
+      }
+      return res.json();
+    })
+    .then((json) => {
+      setImageInfo(json);
+    })
+    .catch((err) => {
+      console.error("Image fetch failed:", err);
+      setImageInfo({ 
+        url: "https://via.placeholder.com/800", 
+        source: "Error loading image" 
+      });
+    });
+}, [id]);
+
+  if (!data) return <div className="p-20 text-center animate-pulse">Consulting the archives...</div>;
 
   if (error) {
     return (
       <div className="p-8 max-w-4xl mx-auto">
-        <Link to="/catalog/messier" className="text-cyan-400 hover:text-cyan-300 transition-colors">
-          ← Back to Catalog
+        <Link to="/" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+          ← Back to Home
         </Link>
         <div className="mt-8 bg-slate-900 rounded-3xl p-10 border border-white/10 shadow-2xl">
           <h1 className="text-3xl font-bold text-red-400">Unable to load object</h1>
@@ -42,10 +65,24 @@ export default function ObjectDetail() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
-    <Link to="/catalog/messier" className="text-cyan-400 hover:text-cyan-300 transition-colors">
-      ← Back to Catalog
+    <Link to="/" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+      ← Back to Home
     </Link>
     
+      {/* Hero Image Section */}
+      <div className="mt-8 relative h-96 w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900">
+        {imageUrl ? (
+          <img 
+            src={imageUrl} 
+            alt={data.name} 
+            className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-700"
+            onError={(e) => e.target.src = "https://via.placeholder.com/800x600/0f172a/06b6d4?text=Archive+Image+Unavailable"}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-slate-500 italic">Searching MAST archives...</div>
+        )}
+
+      </div>
     <div className="mt-8 bg-slate-900 rounded-3xl p-10 border border-white/10 shadow-2xl">
       {/* Display Common Name + Identifier */}
       <h1 className="text-6xl font-black text-white">{data.common_name}</h1>
