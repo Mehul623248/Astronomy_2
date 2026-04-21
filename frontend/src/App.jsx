@@ -11,7 +11,7 @@ function App() {
         
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/messier" element={<MessierTable />} />
+          <Route path="/catalog/messier" element={<MessierTable />} />
           
           {/* The ':id' is a dynamic parameter (e.g. /object/M31 or /object/M42) */}
           <Route path="/object/:id" element={<ObjectDetail />} />

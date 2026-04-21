@@ -4,18 +4,45 @@ import { useEffect, useState } from 'react';
 export default function ObjectDetail() {
   const { id } = useParams(); // Grabs 'M31' from the URL /object/M31
   const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    setData(null);
+    setError(null);
+
     fetch(`/api/object/${id}`)
-      .then(res => res.json())
-      .then(json => setData(json));
+      .then(async (res) => {
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json?.error || `Failed to load object ${id}`);
+        }
+        return json;
+      })
+      .then((json) => setData(json))
+      .catch((err) => setError(err.message));
   }, [id]);
+
+  if (error) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <Link to="/catalog/messier" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+          ← Back to Catalog
+        </Link>
+        <div className="mt-8 bg-slate-900 rounded-3xl p-10 border border-white/10 shadow-2xl">
+          <h1 className="text-3xl font-bold text-red-400">Unable to load object</h1>
+          <p className="mt-3 text-slate-300">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!data) return <div className="p-20 text-center">Loading {id}...</div>;
 
+  const aliases = Array.isArray(data.aliases) ? data.aliases : [];
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
-    <Link to="/messier" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+    <Link to="/catalog/messier" className="text-cyan-400 hover:text-cyan-300 transition-colors">
       ← Back to Catalog
     </Link>
     
@@ -26,7 +53,7 @@ export default function ObjectDetail() {
       
       {/* Alias Badges */}
       <div className="flex flex-wrap gap-2 mt-6">
-        {data.aliases.map((alias, i) => (
+        {aliases.map((alias, i) => (
           <span key={i} className="text-[10px] uppercase tracking-widest bg-white/5 border border-white/10 px-2 py-1 rounded text-slate-400">
             {alias}
           </span>

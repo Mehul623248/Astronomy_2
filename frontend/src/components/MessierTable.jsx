@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function MessierTable() {
   const [allObjects, setAllObjects] = useState([]);      // The "Source of Truth"
@@ -6,6 +7,12 @@ export default function MessierTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate()
+
+  const formatMag = (value) => {
+    if (value === null || value === undefined || value === 'N/A') return 'N/A';
+    const num = Number(value);
+    return Number.isFinite(num) ? num.toFixed(2) : 'N/A';
+  };
 
   useEffect(() => {
     fetch('/api/catalog/messier')
@@ -60,7 +67,7 @@ export default function MessierTable() {
                 <td className="p-4 font-mono text-cyan-300 group-hover:pl-6 transition-all">{obj.id}</td>
                 <td className="p-4 text-slate-400">{obj.type}</td>
                 <td className="p-4 text-xs font-mono text-slate-500">{obj.ra} / {obj.dec}</td>
-                <td className="p-4 text-right font-bold text-amber-400">{obj.mag}</td>
+                <td className="p-4 text-right font-bold text-amber-400">{formatMag(obj.mag)}</td>
               </tr>
             ))}
           </tbody>
