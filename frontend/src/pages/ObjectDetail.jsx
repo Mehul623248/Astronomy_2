@@ -7,6 +7,10 @@ export default function ObjectDetail() {
   const [error, setError] = useState(null);
   const [imageUrl, setImageUrl] = useState("");
   const [imageInfo, setImageInfo] = useState({ url: "", source: "" });
+  const [zoomScale, setZoomScale] = useState(1);
+
+  const handleZoomIn = () => setZoomScale(prev => Math.min(prev + 0.5, 4)); // Max zoom 4x
+  const handleZoomOut = () => setZoomScale(prev => Math.max(prev - 0.5, 1)); // Min zoom 1x
   useEffect(() => {
     setData(null);
     setError(null);
@@ -33,6 +37,7 @@ export default function ObjectDetail() {
     })
     .then((json) => {
       setImageInfo(json);
+      setImageUrl(imageInfo.url);
     })
     .catch((err) => {
       console.error("Image fetch failed:", err);
@@ -62,7 +67,7 @@ export default function ObjectDetail() {
   if (!data) return <div className="p-20 text-center">Loading {id}...</div>;
 
   const aliases = Array.isArray(data.aliases) ? data.aliases : [];
-
+  
   return (
     <div className="p-8 max-w-4xl mx-auto">
     <Link to="/" className="text-cyan-400 hover:text-cyan-300 transition-colors">
@@ -70,11 +75,38 @@ export default function ObjectDetail() {
     </Link>
     
       {/* Hero Image Section */}
-      <div className="mt-8 relative h-96 w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900">
-        {imageUrl ? (
+      <div className="mt-8 relative h-96 w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900 group">
+        {/* ZOOM CONTROLS (Floating Overlay) */}
+        <div className="absolute bottom-4 right-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button 
+            onClick={handleZoomOut}
+            className="bg-slate-800/80 hover:bg-cyan-500 p-2 rounded-lg text-white transition-colors"
+          >
+            ➖
+          </button>
+          <button 
+            onClick={handleZoomIn}
+            className="bg-slate-800/80 hover:bg-cyan-500 p-2 rounded-lg text-white transition-colors"
+          >
+            ➕
+          </button>
+          <button 
+            onClick={() => setZoomScale(1)}
+            className="bg-slate-800/80 hover:bg-red-500 p-2 rounded-lg text-white transition-colors text-xs"
+          >
+            RESET
+          </button>
+        </div>
+        
+        
+        {imageInfo.url ? (
           <img 
-            src={imageUrl} 
+            src={imageInfo.url} 
             alt={data.name} 
+            style={{ 
+        transform: `scale(${zoomScale})`,
+        transition: 'transform 0.3s ease-out' 
+      }}
             className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-700"
             onError={(e) => e.target.src = "https://via.placeholder.com/800x600/0f172a/06b6d4?text=Archive+Image+Unavailable"}
           />

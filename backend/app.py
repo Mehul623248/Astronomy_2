@@ -3,6 +3,8 @@ from flask_cors import CORS
 from astroquery.simbad import Simbad
 import os
 
+import urllib
+
 app = Flask(__name__)
 CORS(app) # Vital for local React-to-Flask communication
 
@@ -104,7 +106,13 @@ def get_object(name):
             return "N/A"
     
     try:
-        result_table = simbad.query_object(search_name)
+        # Try to query the name as-is
+        result_table = Simbad.query_object(name)
+        
+        # If no result, try adding the 'M' space if it's a Messier
+        if result_table is None and name.upper().startswith('M'):
+            result_table = Simbad.query_object(f"M {name[1:]}")
+
         if result_table is None:
             return jsonify({"error": "Object not found"}), 404
 
@@ -140,49 +148,60 @@ def get_object(name):
 from astroquery.mast import Observations
 from astroquery.skyview import SkyView
 import requests
-
 @app.route('/api/image/<path:name>')
 def get_astronomy_image(name):
-    # 1. Standardize the name (M31 -> M 31)
-    search_name = name
+    search_name = name.strip()
     if name.upper().startswith('M') and name[1:].isdigit():
         search_name = f"M {name[1:]}"
 
-    # Default fallback
-    result = {
-        "url": "https://via.placeholder.com/800x600/0f172a/06b6d4?text=No+Archive+Image+Found",
-        "source": "None"
-    }
-
+    # 1. Ask SIMBAD for the specific angular dimension keys
+    Simbad.reset_votable_fields()
+    # 'galDim_majAxis' is the correct key for the object's large diameter
+    Simbad.add_votable_fields('galDim_majAxis', 'otype') 
+    
     try:
-        # --- Try MAST First ---
-        obs = Observations.query_object(search_name, radius=".02 deg")
-        interesting = obs[(obs['obs_collection'] == 'HST') | (obs['obs_collection'] == 'JWST')]
-        
-        if len(interesting) > 0:
-            products = Observations.get_product_list(interesting[0])
-            previews = products[products['productType'] == 'INFO']
-            if len(previews) > 0:
-                result["url"] = previews[0]['data_url']
-                result["source"] = "MAST (Hubble/JWST)"
-                return jsonify(result)
-
-        # --- Try SkyView Second ---
-        # We use a try/except specifically for SkyView because it is slow
-        try:
-            img_urls = SkyView.get_image_list(position=search_name, survey=['DSS2 Red'])
-            if img_urls and len(img_urls) > 0:
-                result["url"] = img_urls[0]
-                result["source"] = "NASA SkyView (DSS2)"
-                return jsonify(result)
-        except Exception as sky_e:
-            print(f"SkyView timed out or failed: {sky_e}")
-
+        result_table = Simbad.query_object(search_name)
     except Exception as e:
-        print(f"General Image Error: {e}")
+        print(f"Simbad query failed: {e}")
+        result_table = None
 
-    # --- Final Fallback if everything fails ---
-    return jsonify(result)
+    # Default zoom (size in degrees) for stars or unknown objects
+    fov = 0.5 
+
+    if result_table and len(result_table) > 0:
+        try:
+            # SIMBAD returns these in arcminutes ('). 
+            # We access the column name exactly as added.
+            major_axis_arcmin = result_table[0]['GALDIM_MAJAXIS']
+            
+            if major_axis_arcmin and not hasattr(major_axis_arcmin, 'mask'):
+                # Convert arcminutes to degrees (major_axis / 60)
+                # Multiply by 1.5 to provide a "margin" around the object
+                fov = (float(major_axis_arcmin) / 60.0) * 1.5
+        except (KeyError, ValueError, TypeError):
+            # Fallback if the object doesn't have a defined size (like a star)
+            fov = 0.5
+
+    # Constrain the FOV so it doesn't zoom out too far or in too deep
+    # M31 needs about 3.0, while a small nebula might need 0.2
+    fov = max(0.1, min(fov, 4.0)) 
+
+    # 2. Build the SkyView URL
+    import urllib.parse
+    encoded_name = urllib.parse.quote(search_name)
+    
+    # We use dss2r for Red survey (best for detail)
+    skyview_url = (
+        f"https://skyview.gsfc.nasa.gov/cgi-bin/images?"
+        f"survey=dss2r&position={encoded_name}&size={fov}&pixels=800&return=jpg"
+    )
+
+    return jsonify({
+        "url": skyview_url, 
+        "source": "NASA SkyView (Adaptive FOV)",
+        "fov_deg": round(fov, 2)
+    })
+
 if __name__ == '__main__':
     # Local development settings
     app.run(host='127.0.0.1', port=5000, debug=True)
