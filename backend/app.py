@@ -82,6 +82,33 @@ def get_messier_catalog():
         json.dump(catalog_data, f)
     return jsonify(catalog_data)
 
+
+def get_wiki_summary(name, common_name):
+    """Fetches a brief description from Wikipedia."""
+    # Prioritize the common name (e.g., "Crab Nebula" is better than "M 1")
+    search_term = name #common_name if common_name and "NAME" not in common_name else name
+    
+    # Crucial Fix: Wikipedia thinks "M1" is a highway. 
+    # We must format it as "Messier 1" to get the astronomical object.
+    if search_term.upper().startswith('M') and search_term[1:].strip().isdigit():
+        search_term = f"Messier {search_term[1:].strip()}"
+        
+    try:
+        url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(search_term)}"
+        headers = {'User-Agent': 'AstroApp/1.0 (Local Development)'}
+        
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            wiki_data = response.json()
+            # The 'extract' field contains the perfect 2-3 sentence summary
+            return wiki_data.get('extract', 'No description available for this object.')
+    except Exception as e:
+        print(f"Wikipedia fetch failed: {e}")
+        
+    return "No description available for this object."
+
+
+
 @app.route('/api/object/<path:name>')
 def get_object(name):
     search_name = name
@@ -129,9 +156,13 @@ def get_object(name):
          
         if "NAME" in common_name:
             common_name = common_name.replace("NAME ", "").strip()
+
+        description = get_wiki_summary(search_name, common_name)
+
         data = {
             "name": search_name,
             "common_name": common_name,
+            "description": description,
             "aliases": aliases,
             "type": str(get_col(row, 'otype', 'OTYPE', default='Unknown')),
             "ra": format_num(get_col(row, 'ra', 'RA', default='N/A'), 4),

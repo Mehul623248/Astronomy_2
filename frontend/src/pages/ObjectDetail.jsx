@@ -162,6 +162,15 @@ export default function ObjectDetail() {
           </div>
         </div>
       </div>
+
+            {/* NEW DESCRIPTION BLOCK */}
+      {data.description && data.description !== "No description available for this object." && (
+        <div className="mt-6 p-6 rounded-2xl bg-slate-800/50 border-l-4 border-cyan-500">
+          <p className="text-slate-300 leading-relaxed text-sm">
+            {data.description}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
