@@ -1,4 +1,4 @@
-from flask import Flask, json, jsonify
+from flask import Flask, json, jsonify, request
 from flask_cors import CORS
 from astroquery.simbad import Simbad
 import os
@@ -148,60 +148,63 @@ def get_object(name):
 from astroquery.mast import Observations
 from astroquery.skyview import SkyView
 import requests
+import urllib.parse
 @app.route('/api/image/<path:name>')
 def get_astronomy_image(name):
     search_name = name.strip()
     if name.upper().startswith('M') and name[1:].isdigit():
         search_name = f"M {name[1:]}"
 
-    # 1. Ask SIMBAD for the specific angular dimension keys
+    mode = request.args.get('mode', 'mono')
+    
+    # 1. Ask SIMBAD for coordinates & size
     Simbad.reset_votable_fields()
-    # 'galDim_majAxis' is the correct key for the object's large diameter
-    Simbad.add_votable_fields('galDim_majAxis', 'otype') 
+    Simbad.add_votable_fields('galDim_majAxis', 'ra', 'dec') 
     
     try:
         result_table = Simbad.query_object(search_name)
     except Exception as e:
         print(f"Simbad query failed: {e}")
-        result_table = None
+        return jsonify({"url": "", "source": "Error"}), 404
 
-    # Default zoom (size in degrees) for stars or unknown objects
-    fov = 0.5 
+    # If SIMBAD doesn't know where it is, we can't photograph it
+    if not result_table or len(result_table) == 0:
+        return jsonify({"url": "", "source": "Error"}), 404
 
-    if result_table and len(result_table) > 0:
-        try:
-            # SIMBAD returns these in arcminutes ('). 
-            # We access the column name exactly as added.
-            major_axis_arcmin = result_table[0]['GALDIM_MAJAXIS']
-            
-            if major_axis_arcmin and not hasattr(major_axis_arcmin, 'mask'):
-                # Convert arcminutes to degrees (major_axis / 60)
-                # Multiply by 1.5 to provide a "margin" around the object
-                fov = (float(major_axis_arcmin) / 60.0) * 1.5
-        except (KeyError, ValueError, TypeError):
-            # Fallback if the object doesn't have a defined size (like a star)
-            fov = 0.5
-
-    # Constrain the FOV so it doesn't zoom out too far or in too deep
-    # M31 needs about 3.0, while a small nebula might need 0.2
-    fov = max(0.1, min(fov, 4.0)) 
-
-    # 2. Build the SkyView URL
-    import urllib.parse
-    encoded_name = urllib.parse.quote(search_name)
+    # Extract coordinates directly
+    row = result_table[0]
+    ra_deg = row['RA'] if 'RA' in row.colnames else row['ra']
+    dec_deg = row['DEC'] if 'DEC' in row.colnames else row['dec']
     
-    # We use dss2r for Red survey (best for detail)
-    skyview_url = (
-        f"https://skyview.gsfc.nasa.gov/cgi-bin/images?"
-        f"survey=dss2r&position={encoded_name}&size={fov}&pixels=800&return=jpg"
+    # Adaptive FOV calculation
+    fov = 0.5
+    try:
+        major_axis = row['GALDIM_MAJAXIS']
+        if major_axis and not hasattr(major_axis, 'mask'):
+            fov = (float(major_axis) / 60.0) * 1.5
+    except:
+        pass
+
+    fov = max(0.1, min(fov, 4.0)) 
+    
+    # 2. The Modern CDS HiPS FITS-to-JPG API
+    # We use DSS2 Red for Mono, and DSS2 Color for... Color!
+    survey = 'CDS/P/DSS2/color' if mode == 'color' else 'CDS/P/DSS2/red'
+
+    # Notice how clean this URL is: it takes RA, Dec, FOV, and format=jpg directly.
+    aladin_url = (
+        f"https://alasky.cds.unistra.fr/hips-image-services/hips2fits?"
+        f"hips={survey}&width=800&height=800&fov={fov}&projection=TAN"
+        f"&coordsys=icrs&ra={ra_deg}&dec={dec_deg}&format=jpg"
     )
 
+    # 3. Send the direct URL to React. It's so fast we don't even need a proxy!
     return jsonify({
-        "url": skyview_url, 
-        "source": "NASA SkyView (Adaptive FOV)",
+        "url": aladin_url,
+        "source": f"CDS Aladin ({'Color' if mode == 'color' else 'Monochrome'})",
         "fov_deg": round(fov, 2)
     })
-
+   
 if __name__ == '__main__':
     # Local development settings
     app.run(host='127.0.0.1', port=5000, debug=True)

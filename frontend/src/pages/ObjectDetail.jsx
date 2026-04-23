@@ -8,6 +8,8 @@ export default function ObjectDetail() {
   const [imageUrl, setImageUrl] = useState("");
   const [imageInfo, setImageInfo] = useState({ url: "", source: "" });
   const [zoomScale, setZoomScale] = useState(1);
+  const [viewMode, setViewMode] = useState('mono'); // 'mono' or 'color'
+  const [imgError, setImgError] = useState(false);
 
   const handleZoomIn = () => setZoomScale(prev => Math.min(prev + 0.5, 4)); // Max zoom 4x
   const handleZoomOut = () => setZoomScale(prev => Math.max(prev - 0.5, 1)); // Min zoom 1x
@@ -27,7 +29,7 @@ export default function ObjectDetail() {
       .catch((err) => setError(err.message));
   
  
- fetch(`/api/image/${id}`)
+ fetch(`/api/image/${encodeURIComponent(id)}?mode=${viewMode}`)
     .then((res) => {
       if (!res.ok) {
         // If server returns 500 or 404, stop here
@@ -42,11 +44,11 @@ export default function ObjectDetail() {
     .catch((err) => {
       console.error("Image fetch failed:", err);
       setImageInfo({ 
-        url: "https://via.placeholder.com/800", 
+        url: "./public/orange.png", 
         source: "Error loading image" 
       });
     });
-}, [id]);
+}, [id, viewMode]);
 
   if (!data) return <div className="p-20 text-center animate-pulse">Consulting the archives...</div>;
 
@@ -74,6 +76,25 @@ export default function ObjectDetail() {
       ← Back to Home
     </Link>
     
+      <div className="flex gap-4 mb-4">
+    <button 
+      onClick={() => setViewMode('mono')}
+      className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+        viewMode === 'mono' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+      }`}
+    >
+      SCIENTIFIC (RED)
+    </button>
+    <button 
+      onClick={() => setViewMode('color')}
+      className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+        viewMode === 'color' ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+      }`}
+    >
+      COMPOSITE (COLOR)
+    </button>
+  </div>
+
       {/* Hero Image Section */}
       <div className="mt-8 relative h-96 w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-slate-900 group">
         {/* ZOOM CONTROLS (Floating Overlay) */}
@@ -108,7 +129,8 @@ export default function ObjectDetail() {
         transition: 'transform 0.3s ease-out' 
       }}
             className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-700"
-            onError={(e) => e.target.src = "https://via.placeholder.com/800x600/0f172a/06b6d4?text=Archive+Image+Unavailable"}
+            
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-slate-500 italic">Searching MAST archives...</div>
