@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage';
 import MessierTable from './components/MessierTable';
 import ObjectDetail from './pages/ObjectDetail'; // We'll build this next
 import HRDiagram from './pages/HRDiagram';
+import DSO from './pages/DSO';
 
 function App() {
   return (
@@ -13,7 +14,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/catalog/messier" element={<MessierTable />} />
-          <Route path="/deepsky" element={<div className="p-10 text-center">Deep Sky Catalog Coming Soon...</div>} />
+          <Route path="/deepsky" element={<DSO />} />
           <Route path="/hr" element={<HRDiagram />} />
           {/* The ':id' is a dynamic parameter (e.g. /object/M31 or /object/M42) */}
           <Route path="/object/:id" element={<ObjectDetail />} />

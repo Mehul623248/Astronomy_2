@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 const categories = [
-  { id: 'messier', name: 'Messier Catalog', icon: '🔭', color: 'from-blue-600', path: '/catalog/messier' },
-  { id: 'deepsky', name: 'Deep Sky Objects', icon: '🌌', color: 'from-purple-600', path: '/deepsky' },
-  { id: 'hr', name: 'HR Diagram', icon: '📊', color: 'from-amber-600', path: '/hr' },
+  { id: 'messier', name: 'Messier Catalog', color: 'from-blue-600', path: '/catalog/messier' },
+  { id: 'deepsky', name: 'Deep Sky Objects', color: 'from-purple-600', path: '/deepsky' },
+  { id: 'hr', name: 'HR Diagram', color: 'from-amber-600', path: '/hr' },
 ];
 
 export default function HomePage() {
