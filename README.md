@@ -9,3 +9,11 @@ Homepage:
 This is what one webpage looks like. Webpage is created dynamically (fills out general outline).
 <img width="653" height="878" alt="image" src="https://github.com/user-attachments/assets/d11a0800-c2ed-4be9-a84f-7ecafb0636bc" />
 <img width="660" height="642" alt="image" src="https://github.com/user-attachments/assets/cff245bd-b067-44c9-a7d7-b13762d95ee6" />
+
+This is a part of the sample DSO page:
+<img width="981" height="892" alt="image" src="https://github.com/user-attachments/assets/28a1aadb-e7bb-4db8-a941-430c29fae131" />
+
+
+
+This is the HR diagram page:
+<img width="1026" height="824" alt="image" src="https://github.com/user-attachments/assets/3af2f140-0dec-4491-babc-86d0fcd2a0c1" />
