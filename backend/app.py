@@ -1,6 +1,8 @@
 from flask import Flask, json, jsonify, request
 from flask_cors import CORS
 from astroquery.simbad import Simbad
+from astropy.coordinates import SkyCoord
+import astropy.units as u
 import os
 os.environ['ASTROPY_CACHE_DIR'] = '/tmp/astropy_cache'
 
@@ -244,10 +246,19 @@ def get_astronomy_image(name):
     if not result_table or len(result_table) == 0:
         return jsonify({"url": "", "source": "Error"}), 404
 
-    # Extract coordinates directly
+    # Extract raw string coordinates 
     row = result_table[0]
-    ra_deg = row['RA'] if 'RA' in row.colnames else row['ra']
-    dec_deg = row['DEC'] if 'DEC' in row.colnames else row['dec']
+    ra_raw = str(row['RA'] if 'RA' in row.colnames else row['ra'])
+    dec_raw = str(row['DEC'] if 'DEC' in row.colnames else row['dec'])
+    
+    # NEW: Translate the "08 39 58.4" strings into decimal degrees (e.g., 129.993)
+    try:
+        coord = SkyCoord(f"{ra_raw} {dec_raw}", unit=(u.hourangle, u.deg))
+        ra_decimal = coord.ra.deg
+        dec_decimal = coord.dec.deg
+    except Exception as e:
+        print(f"Coordinate conversion failed: {e}")
+        return jsonify({"url": "", "source": "Error"}), 500
     
     # Adaptive FOV calculation
     fov = 0.5
@@ -263,10 +274,11 @@ def get_astronomy_image(name):
     # 2. The Modern CDS HiPS FITS-to-JPG API
     survey = 'CDS/P/DSS2/color' if mode == 'color' else 'CDS/P/DSS2/red'
 
+    # Inject the clean, space-free decimal numbers into the URL
     aladin_url = (
         f"https://alasky.cds.unistra.fr/hips-image-services/hips2fits?"
         f"hips={survey}&width=800&height=800&fov={fov}&projection=TAN"
-        f"&coordsys=icrs&ra={ra_deg}&dec={dec_deg}&format=jpg"
+        f"&coordsys=icrs&ra={ra_decimal}&dec={dec_decimal}&format=jpg"
     )
 
     # 3. Send the direct URL to React. 
