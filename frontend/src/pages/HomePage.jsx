@@ -10,12 +10,12 @@ const categories = [
 export default function HomePage() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
-
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const handleSearch = (e) => {
     e.preventDefault();
     if (query.trim()) {
       // Use encodeURIComponent to handle spaces like "North Star"
-      navigate(`/object/${encodeURIComponent(query.trim())}`);
+      navigate(`${API_BASE}/api/object/${encodeURIComponent(query.trim())}`);
     }
   };
 

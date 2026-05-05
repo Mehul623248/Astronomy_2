@@ -13,11 +13,12 @@ export default function ObjectDetail() {
 
   const handleZoomIn = () => setZoomScale(prev => Math.min(prev + 0.5, 4)); // Max zoom 4x
   const handleZoomOut = () => setZoomScale(prev => Math.max(prev - 0.5, 1)); // Min zoom 1x
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   useEffect(() => {
     setData(null);
     setError(null);
 
-    fetch(`/api/object/${id}`)
+    fetch(`${API_BASE}/api/object/${id}`)
       .then(async (res) => {
         const json = await res.json();
         if (!res.ok) {
@@ -29,7 +30,7 @@ export default function ObjectDetail() {
       .catch((err) => setError(err.message));
   
  
- fetch(`/api/image/${encodeURIComponent(id)}?mode=${viewMode}`)
+ fetch(`${API_BASE}/api/image/${encodeURIComponent(id)}?mode=${viewMode}`)
     .then((res) => {
       if (!res.ok) {
         // If server returns 500 or 404, stop here

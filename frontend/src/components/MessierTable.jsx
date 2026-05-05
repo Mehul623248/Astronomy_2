@@ -7,7 +7,7 @@ export default function MessierTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate()
-
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const formatMag = (value) => {
     if (value === null || value === undefined || value === 'N/A') return 'N/A';
     const num = Number(value);
@@ -15,7 +15,7 @@ export default function MessierTable() {
   };
 
   useEffect(() => {
-    fetch('/api/catalog/messier')
+    fetch(`${API_BASE}/api/catalog/messier`)
       .then(res => res.json())
       .then(data => {
         setAllObjects(data);

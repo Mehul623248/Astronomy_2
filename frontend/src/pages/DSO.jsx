@@ -29,10 +29,10 @@ const dsoData = [
 const DSOCard = ({ dso }) => {
   const [imageUrl, setImageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   useEffect(() => {
     // Calls your Flask backend to get the CDS Aladin image url
-    fetch(`/api/image/${encodeURIComponent(dso.id)}?mode=color`)
+    fetch(`${API_BASE}/api/image/${encodeURIComponent(dso.id)}?mode=color`)
       .then(res => res.json())
       .then(data => {
         if (data.url) setImageUrl(data.url);
