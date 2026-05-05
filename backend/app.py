@@ -2,6 +2,7 @@ from flask import Flask, json, jsonify, request
 from flask_cors import CORS
 from astroquery.simbad import Simbad
 import os
+os.environ['ASTROPY_CACHE_DIR'] = '/tmp/astropy_cache'
 
 import urllib
 
