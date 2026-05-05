@@ -169,11 +169,11 @@ def get_object(name):
     
     try:
         # Try to query the name as-is
-        result_table = Simbad.query_object(name)
+        result_table = simbad.query_object(name) # <-- Lowercase s
         
         # If no result, try adding the 'M' space if it's a Messier
         if result_table is None and name.upper().startswith('M'):
-            result_table = Simbad.query_object(f"M {name[1:]}")
+            result_table = simbad.query_object(f"M {name[1:]}") # <-- Lowercase s
 
         if result_table is None:
             return jsonify({"error": "Object not found"}), 404
@@ -224,19 +224,17 @@ def get_astronomy_image(name):
 
     mode = request.args.get('mode', 'mono')
     
-    # 1. Ask SIMBAD for coordinates
-    Simbad.reset_votable_fields()
-    Simbad.add_votable_fields('ra', 'dec') 
+    # 1. Create a LOCAL instance
+    simbad = Simbad()
     
     # Safely try to ask for dimensions to calculate dynamic zoom.
-    # If the server's astroquery version rejects it, we just pass and use the default 0.5 FOV.
     try:
-        Simbad.add_votable_fields('galDim_majAxis')
+        simbad.add_votable_fields('galDim_majAxis') # <-- Lowercase s
     except KeyError:
         pass
     
     try:
-        result_table = Simbad.query_object(search_name)
+        result_table = simbad.query_object(search_name) # <-- Lowercase s
   
     except Exception as e:
         print(f"Simbad query failed: {e}")
