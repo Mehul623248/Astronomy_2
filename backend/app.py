@@ -9,6 +9,10 @@ import urllib
 app = Flask(__name__)
 CORS(app) # Vital for local React-to-Flask communication
 
+@app.route('/')
+def health_check():
+    return "Astronomy API is live!", 200
+
 @app.route('/api/catalog/messier')
 def get_messier_catalog():
 
