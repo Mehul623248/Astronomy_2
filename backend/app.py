@@ -129,13 +129,25 @@ def get_object(name):
         search_name = f"M {name[1:]}"
 
     simbad = Simbad()
-    simbad.add_votable_fields('otype', 'mesdistance')
+    
+    # 1. Add the universally safe field
+    simbad.add_votable_fields('otype')
 
+    # 2. Safely add Magnitude
     try:
         simbad.add_votable_fields('flux(V)')
     except KeyError:
         try:
             simbad.add_votable_fields('V')
+        except KeyError:
+            pass
+
+    # 3. Safely add Distance
+    try:
+        simbad.add_votable_fields('distance')
+    except KeyError:
+        try:
+            simbad.add_votable_fields('mesdistance')
         except KeyError:
             pass
 
