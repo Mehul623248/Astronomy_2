@@ -28,7 +28,15 @@ def get_messier_catalog():
    
     
     simbad = Simbad()
-    simbad.add_votable_fields('V', 'otype')
+    simbad.add_votable_fields('otype')
+
+    try:
+        simbad.add_votable_fields('flux(V)')
+    except KeyError:
+        try:
+            simbad.add_votable_fields('V')
+        except KeyError:
+            pass
 
     # Query the Messier catalog first; if SIMBAD changes behavior, fall back to criteria-based queries.
     result_table = None
@@ -121,7 +129,15 @@ def get_object(name):
         search_name = f"M {name[1:]}"
 
     simbad = Simbad()
-    simbad.add_votable_fields('V', 'otype', 'mesdistance')
+    simbad.add_votable_fields('otype', 'mesdistance')
+
+    try:
+        simbad.add_votable_fields('flux(V)')
+    except KeyError:
+        try:
+            simbad.add_votable_fields('V')
+        except KeyError:
+            pass
 
     def get_col(row, *names, default=""):
         for field_name in names:
