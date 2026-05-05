@@ -194,12 +194,20 @@ def get_astronomy_image(name):
 
     mode = request.args.get('mode', 'mono')
     
-    # 1. Ask SIMBAD for coordinates & size
+    # 1. Ask SIMBAD for coordinates
     Simbad.reset_votable_fields()
-    Simbad.add_votable_fields('galDim_majAxis', 'ra', 'dec') 
+    Simbad.add_votable_fields('ra', 'dec') 
+    
+    # Safely try to ask for dimensions to calculate dynamic zoom.
+    # If the server's astroquery version rejects it, we just pass and use the default 0.5 FOV.
+    try:
+        Simbad.add_votable_fields('galDim_majAxis')
+    except KeyError:
+        pass
     
     try:
         result_table = Simbad.query_object(search_name)
+  
     except Exception as e:
         print(f"Simbad query failed: {e}")
         return jsonify({"url": "", "source": "Error"}), 404
