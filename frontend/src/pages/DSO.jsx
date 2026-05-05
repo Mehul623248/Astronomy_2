@@ -29,7 +29,7 @@ const dsoData = [
 const DSOCard = ({ dso }) => {
   const [imageUrl, setImageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
-  const API_BASE = import.meta.env.VITE_API_URL || '';
+  const API_BASE = 'https://astronomy-2-s8v0.onrender.com' || '';
   useEffect(() => {
     // Calls your Flask backend to get the CDS Aladin image url
     fetch(`${API_BASE}/api/image/${encodeURIComponent(dso.id)}?mode=color`)

@@ -10,7 +10,7 @@ const categories = [
 export default function HomePage() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
-  const API_BASE = import.meta.env.VITE_API_URL || '';
+  const API_BASE = 'https://astronomy-2-s8v0.onrender.com' || '';
   const handleSearch = (e) => {
     e.preventDefault();
     if (query.trim()) {

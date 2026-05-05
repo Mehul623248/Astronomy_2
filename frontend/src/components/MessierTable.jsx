@@ -7,7 +7,7 @@ export default function MessierTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate()
-  const API_BASE = import.meta.env.VITE_API_URL || '';
+  const API_BASE = 'https://astronomy-2-s8v0.onrender.com' || '';
   const formatMag = (value) => {
     if (value === null || value === undefined || value === 'N/A') return 'N/A';
     const num = Number(value);

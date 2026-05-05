@@ -13,7 +13,7 @@ export default function ObjectDetail() {
 
   const handleZoomIn = () => setZoomScale(prev => Math.min(prev + 0.5, 4)); // Max zoom 4x
   const handleZoomOut = () => setZoomScale(prev => Math.max(prev - 0.5, 1)); // Min zoom 1x
-  const API_BASE = import.meta.env.VITE_API_URL || '';
+  const API_BASE = 'https://astronomy-2-s8v0.onrender.com' || '';
   useEffect(() => {
     setData(null);
     setError(null);
