@@ -185,6 +185,7 @@ from astroquery.mast import Observations
 from astroquery.skyview import SkyView
 import requests
 import urllib.parse
+
 @app.route('/api/image/<path:name>')
 def get_astronomy_image(name):
     search_name = name.strip()
@@ -224,22 +225,75 @@ def get_astronomy_image(name):
     fov = max(0.1, min(fov, 4.0)) 
     
     # 2. The Modern CDS HiPS FITS-to-JPG API
-    # We use DSS2 Red for Mono, and DSS2 Color for... Color!
     survey = 'CDS/P/DSS2/color' if mode == 'color' else 'CDS/P/DSS2/red'
 
-    # Notice how clean this URL is: it takes RA, Dec, FOV, and format=jpg directly.
     aladin_url = (
         f"https://alasky.cds.unistra.fr/hips-image-services/hips2fits?"
         f"hips={survey}&width=800&height=800&fov={fov}&projection=TAN"
         f"&coordsys=icrs&ra={ra_deg}&dec={dec_deg}&format=jpg"
     )
 
-    # 3. Send the direct URL to React. It's so fast we don't even need a proxy!
+    # 3. Send the direct URL to React. 
     return jsonify({
         "url": aladin_url,
         "source": f"CDS Aladin ({'Color' if mode == 'color' else 'Monochrome'})",
         "fov_deg": round(fov, 2)
     })
+# @app.route('/api/image/<path:name>')
+# def get_astronomy_image(name):
+#     search_name = name.strip()
+#     if name.upper().startswith('M') and name[1:].isdigit():
+#         search_name = f"M {name[1:]}"
+
+#     mode = request.args.get('mode', 'mono')
+    
+#     # 1. Ask SIMBAD for coordinates & size
+#     Simbad.reset_votable_fields()
+#     Simbad.add_votable_fields('galDim_majAxis', 'ra', 'dec') 
+    
+#     try:
+#         result_table = Simbad.query_object(search_name)
+#     except Exception as e:
+#         print(f"Simbad query failed: {e}")
+#         return jsonify({"url": "", "source": "Error"}), 404
+
+#     # If SIMBAD doesn't know where it is, we can't photograph it
+#     if not result_table or len(result_table) == 0:
+#         return jsonify({"url": "", "source": "Error"}), 404
+
+#     # Extract coordinates directly
+#     row = result_table[0]
+#     ra_deg = row['RA'] if 'RA' in row.colnames else row['ra']
+#     dec_deg = row['DEC'] if 'DEC' in row.colnames else row['dec']
+    
+#     # Adaptive FOV calculation
+#     fov = 0.5
+#     try:
+#         major_axis = row['GALDIM_MAJAXIS']
+#         if major_axis and not hasattr(major_axis, 'mask'):
+#             fov = (float(major_axis) / 60.0) * 1.5
+#     except:
+#         pass
+
+#     fov = max(0.1, min(fov, 4.0)) 
+    
+#     # 2. The Modern CDS HiPS FITS-to-JPG API
+#     # We use DSS2 Red for Mono, and DSS2 Color for... Color!
+#     survey = 'CDS/P/DSS2/color' if mode == 'color' else 'CDS/P/DSS2/red'
+
+#     # Notice how clean this URL is: it takes RA, Dec, FOV, and format=jpg directly.
+#     aladin_url = (
+#         f"https://alasky.cds.unistra.fr/hips-image-services/hips2fits?"
+#         f"hips={survey}&width=800&height=800&fov={fov}&projection=TAN"
+#         f"&coordsys=icrs&ra={ra_deg}&dec={dec_deg}&format=jpg"
+#     )
+
+#     # 3. Send the direct URL to React. It's so fast we don't even need a proxy!
+#     return jsonify({
+#         "url": aladin_url,
+#         "source": f"CDS Aladin ({'Color' if mode == 'color' else 'Monochrome'})",
+#         "fov_deg": round(fov, 2)
+#     })
    
 if __name__ == '__main__':
     # Local development settings
