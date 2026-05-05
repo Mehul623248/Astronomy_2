@@ -44,7 +44,7 @@ const DSOCard = ({ dso }) => {
   return (
 
     <Link 
-      to={`/object/${encodeURIComponent(dso.id)}`} 
+      to={`${API_BASE}/api/object/${encodeURIComponent(dso.id)}`} 
       className="block outline-none"
     >
 
