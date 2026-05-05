@@ -15,7 +15,7 @@ export default function HomePage() {
     e.preventDefault();
     if (query.trim()) {
       // Use encodeURIComponent to handle spaces like "North Star"
-      navigate(`${API_BASE}/api/object/${encodeURIComponent(query.trim())}`);
+      navigate(`/object/${encodeURIComponent(query.trim())}`);
     }
   };
 
