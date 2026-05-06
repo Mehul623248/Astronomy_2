@@ -177,11 +177,13 @@ def get_object(name):
 
         row = result_table[0]
 
-        # 3. Use LOWERCASE simbad for aliases
+       # 3. Use LOWERCASE simbad for aliases
         alias_table = simbad.query_objectids(search_name)
         aliases = []
-        if alias_table is not None:
-            aliases = [str(alias_row['id']).strip() for alias_row in alias_table if str(alias_row['id']).strip()]
+        if alias_table is not None and len(alias_table) > 0:
+            # Dynamically grab the first column's name so we don't care if it's 'id' or 'ID'
+            id_col = alias_table.colnames[0] 
+            aliases = [str(alias_row[id_col]).strip() for alias_row in alias_table if str(alias_row[id_col]).strip()]
         
         common_name = next((n for n in aliases if "Galaxy" in n or "Nebula" in n or "NAME" in n), aliases[0] if aliases else search_name)
          
@@ -208,7 +210,7 @@ def get_object(name):
         print(f"Search API Error: {e}")
         return jsonify({"error": str(e)}), 500
     
-    
+
 from astroquery.mast import Observations
 from astroquery.skyview import SkyView
 import requests

@@ -45,7 +45,7 @@ export default function ObjectDetail() {
     .catch((err) => {
       console.error("Image fetch failed:", err);
       setImageInfo({ 
-        url: "./public/orange.png", 
+        url: "/orange.png", // Absolute path, no "public" folder mentioned!
         source: "Error loading image" 
       });
     });
