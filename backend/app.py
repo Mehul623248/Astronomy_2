@@ -130,12 +130,11 @@ def get_object(name):
     if name.upper().startswith('M') and name[1:].isdigit():
         search_name = f"M {name[1:]}"
 
+    # 1. Isolated LOCAL Simbad connection
     simbad = Simbad()
-    
-    # 1. Add the universally safe field
     simbad.add_votable_fields('otype')
-
-    # 2. Safely add Magnitude
+    
+    # Safely load the volatile fields
     try:
         simbad.add_votable_fields('flux(V)')
     except KeyError:
@@ -143,8 +142,7 @@ def get_object(name):
             simbad.add_votable_fields('V')
         except KeyError:
             pass
-
-    # 3. Safely add Distance
+            
     try:
         simbad.add_votable_fields('distance')
     except KeyError:
@@ -168,25 +166,23 @@ def get_object(name):
             return "N/A"
     
     try:
-        # Try to query the name as-is
-        result_table = simbad.query_object(name) # <-- Lowercase s
+        # 2. Use LOWERCASE simbad for all queries
+        result_table = simbad.query_object(search_name)
         
-        # If no result, try adding the 'M' space if it's a Messier
         if result_table is None and name.upper().startswith('M'):
-            result_table = simbad.query_object(f"M {name[1:]}") # <-- Lowercase s
+            result_table = simbad.query_object(f"M {name[1:]}")
 
         if result_table is None:
             return jsonify({"error": "Object not found"}), 404
 
         row = result_table[0]
 
+        # 3. Use LOWERCASE simbad for aliases
         alias_table = simbad.query_objectids(search_name)
         aliases = []
         if alias_table is not None:
             aliases = [str(alias_row['id']).strip() for alias_row in alias_table if str(alias_row['id']).strip()]
         
-        # 3. Find a "Common Name" (usually the one that doesn't look like a catalog number)
-        # Or just pick the first few
         common_name = next((n for n in aliases if "Galaxy" in n or "Nebula" in n or "NAME" in n), aliases[0] if aliases else search_name)
          
         if "NAME" in common_name:
@@ -202,15 +198,17 @@ def get_object(name):
             "type": str(get_col(row, 'otype', 'OTYPE', default='Unknown')),
             "ra": format_num(get_col(row, 'ra', 'RA', default='N/A'), 4),
             "dec": format_num(get_col(row, 'dec', 'DEC', default='N/A'), 4),
-            "mag": format_num(get_col(row, 'V', 'v', default='N/A'), 2),
-            "distance": format_num(get_col(row, 'mesdistance.dist', default='N/A'), 2),
-            "unit": str(get_col(row, 'mesdistance.unit', default=''))
+            # Updated to look for all possible variations of the column names
+            "mag": format_num(get_col(row, 'V', 'v', 'FLUX_V', 'flux_V', 'flux(v)', default='N/A'), 2),
+            "distance": format_num(get_col(row, 'mesdistance.dist', 'distance.dist', 'Distance_distance', 'distance', default='N/A'), 2),
+            "unit": str(get_col(row, 'mesdistance.unit', 'distance.unit', 'Distance_unit', default=''))
         }
         return jsonify(data)
     except Exception as e:
+        print(f"Search API Error: {e}")
         return jsonify({"error": str(e)}), 500
     
-
+    
 from astroquery.mast import Observations
 from astroquery.skyview import SkyView
 import requests
